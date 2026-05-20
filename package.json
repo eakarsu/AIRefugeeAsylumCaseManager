@@ -1,0 +1,13 @@
+{
+  "name": "ai-refugee-asylum-case-manager",
+  "version": "1.0.0",
+  "description": "AI-powered refugee/asylum legal case management platform (clients, cases, hearings, country-of-origin info, dossiers, AI drafting)",
+  "private": true,
+  "scripts": {
+    "start": "bash start.sh",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm start",
+    "seed": "cd backend && node seed/seed.js",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  }
+}
