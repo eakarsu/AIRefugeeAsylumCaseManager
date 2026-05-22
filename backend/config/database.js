@@ -18,4 +18,17 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
+// Auto-apply benefits schema migration on startup (idempotent via IF NOT EXISTS).
+// Runs asynchronously so the server binds immediately; errors are logged, not fatal.
+(async () => {
+  const migrationFile = path.join(__dirname, '..', 'migrations', '004_benefits_schema.sql');
+  try {
+    const sql = fs.readFileSync(migrationFile, 'utf8');
+    await pool.query(sql);
+    console.log('[db] benefits schema migration 004 applied (or already current)');
+  } catch (err) {
+    console.error('[db] WARNING: could not apply benefits schema migration 004:', err.message);
+  }
+})();
+
 module.exports = pool;

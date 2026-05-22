@@ -53,6 +53,33 @@ import { getToken } from './services/api';
 
 import './App.css';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+// Gov Benefits pages
+import MedicaidEligibilityPage   from './pages/benefits/MedicaidEligibilityPage';
+import SnapEligibilityPage       from './pages/benefits/SnapEligibilityPage';
+import SsiSsdiEligibilityPage    from './pages/benefits/SsiSsdiEligibilityPage';
+import TanfCalcPage              from './pages/benefits/TanfCalcPage';
+import IncomeVerificationPage    from './pages/benefits/IncomeVerificationPage';
+import AssetTestsPage            from './pages/benefits/AssetTestsPage';
+import HouseholdCompositionPage  from './pages/benefits/HouseholdCompositionPage';
+import NoticeGenerationPage      from './pages/benefits/NoticeGenerationPage';
+import AppealsWorkflowPage       from './pages/benefits/AppealsWorkflowPage';
+
+// Apply pass 7 (full backlog implementation) — new pages
+import AICoiBrieferBundlePage    from './pages/AICoiBrieferBundlePage';
+import AIDeclarationRedlinerPage from './pages/AIDeclarationRedlinerPage';
+import AITranslationHelperPage   from './pages/AITranslationHelperPage';
+import AIHearingQaSimulatorPage  from './pages/AIHearingQaSimulatorPage';
+import PIIVaultPage              from './pages/PIIVaultPage';
+import RedactionsPage            from './pages/RedactionsPage';
+import CourtDatesPage            from './pages/CourtDatesPage';
+import I18nPage                  from './pages/I18nPage';
+import TraumaFlagsPage           from './pages/TraumaFlagsPage';
+import ExternalFeedsPage         from './pages/ExternalFeedsPage';
+import CredibleFearInterviewPrepPage from './pages/CredibleFearInterviewPrepPage';
+
 function RequireAuth({ children }) {
   const location = useLocation();
   if (!getToken()) {
@@ -69,6 +96,9 @@ function ShellRoutes() {
         <Topbar />
         <div style={{ padding: '24px 32px' }}>
           <Routes>
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
             <Route path="/" element={<Dashboard />} />
 
             {/* 18 CRUD */}
@@ -113,6 +143,32 @@ function ShellRoutes() {
 
             {/* Custom analytics views */}
             <Route path="/custom-views" element={<CustomViewsPage />} />
+
+            {/* Apply pass 7 — new AI verbs */}
+            <Route path="/ai/coi-briefer-bundle"    element={<AICoiBrieferBundlePage />} />
+            <Route path="/ai/declaration-redliner" element={<AIDeclarationRedlinerPage />} />
+            <Route path="/ai/translation-helper"   element={<AITranslationHelperPage />} />
+            <Route path="/ai/hearing-qa-simulator" element={<AIHearingQaSimulatorPage />} />
+            <Route path="/ai/credible-fear-interview-prep" element={<CredibleFearInterviewPrepPage />} />
+
+            {/* Apply pass 7 — non-AI tools */}
+            <Route path="/pii-vault"      element={<PIIVaultPage />} />
+            <Route path="/redactions"     element={<RedactionsPage />} />
+            <Route path="/court-dates"    element={<CourtDatesPage />} />
+            <Route path="/i18n"           element={<I18nPage />} />
+            <Route path="/trauma-flags"   element={<TraumaFlagsPage />} />
+            <Route path="/external-feeds" element={<ExternalFeedsPage />} />
+
+            {/* Gov Benefits */}
+            <Route path="/benefits/medicaid-eligibility"  element={<MedicaidEligibilityPage />} />
+            <Route path="/benefits/snap-eligibility"      element={<SnapEligibilityPage />} />
+            <Route path="/benefits/ssi-ssdi-eligibility"  element={<SsiSsdiEligibilityPage />} />
+            <Route path="/benefits/tanf-calc"             element={<TanfCalcPage />} />
+            <Route path="/benefits/income-verification"   element={<IncomeVerificationPage />} />
+            <Route path="/benefits/asset-tests"           element={<AssetTestsPage />} />
+            <Route path="/benefits/household-composition" element={<HouseholdCompositionPage />} />
+            <Route path="/benefits/notice-generation"     element={<NoticeGenerationPage />} />
+            <Route path="/benefits/appeals-workflow"      element={<AppealsWorkflowPage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

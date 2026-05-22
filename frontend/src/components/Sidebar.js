@@ -48,11 +48,16 @@ const GOVERNANCE_LINKS = [
 // "AI Drafting" — generative / drafting verbs
 const AI_DRAFTING_LINKS = [
   { to: '/ai/coi-cite-memo',          label: 'AI · COI Cite Memo' },
+  { to: '/ai/coi-briefer-bundle',     label: 'AI · COI Briefer (Source Bundle)' },
   { to: '/ai/asylum-narrative-draft', label: 'AI · Asylum Narrative Draft' },
+  { to: '/ai/declaration-redliner',   label: 'AI · Declaration Redliner' },
   { to: '/ai/hearing-prep-brief',     label: 'AI · Hearing Prep Brief' },
+  { to: '/ai/hearing-qa-simulator',   label: 'AI · Hearing Q&A Simulator' },
+  { to: '/ai/credible-fear-interview-prep', label: 'AI · Credible Fear Prep' },
   { to: '/ai/sponsor-petition-draft', label: 'AI · Sponsor Petition Draft' },
   { to: '/ai/attorney-handoff-summary', label: 'AI · Attorney Handoff Summary' },
   { to: '/ai/donor-impact-report',    label: 'AI · Donor Impact Report' },
+  { to: '/ai/translation-helper',     label: 'AI · Translation Helper' },
 ];
 
 // "AI Analysis" — analytical / classification / matching verbs
@@ -67,6 +72,16 @@ const AI_ANALYSIS_LINKS = [
   { to: '/ai/partner-org-referral',       label: 'AI · Partner Org Referral' },
   { to: '/ai/court-calendar-conflicts',   label: 'AI · Court Calendar Conflicts' },
   { to: '/ai/executive-brief',            label: 'AI · Executive Brief' },
+];
+
+// Apply pass 7 — additional tooling (non-AI)
+const PASS7_TOOLS_LINKS = [
+  { to: '/court-dates',    label: 'Court Dates (Scheduler)' },
+  { to: '/redactions',     label: 'Document Redactions' },
+  { to: '/pii-vault',      label: 'PII Vault' },
+  { to: '/trauma-flags',   label: 'Trauma-Informed Flags' },
+  { to: '/i18n',           label: 'i18n Bundles' },
+  { to: '/external-feeds', label: 'External Feeds (EOIR/USCIS/DHS)' },
 ];
 
 export default function Sidebar() {
@@ -109,6 +124,20 @@ export default function Sidebar() {
 
       <div className="sidebar-group-label">Analytics</div>
       <NavLink to="/custom-views">Case Analytics</NavLink>
+
+      <div className="sidebar-group-label">Tools</div>
+      {PASS7_TOOLS_LINKS.map((l) => (<NavLink key={l.to} to={l.to}>{l.label}</NavLink>))}
+
+      <div className="sidebar-group-label">Benefits Eligibility</div>
+      <NavLink to="/benefits/medicaid-eligibility">Medicaid Eligibility</NavLink>
+      <NavLink to="/benefits/snap-eligibility">SNAP Eligibility</NavLink>
+      <NavLink to="/benefits/ssi-ssdi-eligibility">SSI / SSDI Eligibility</NavLink>
+      <NavLink to="/benefits/tanf-calc">TANF Calculator</NavLink>
+      <NavLink to="/benefits/income-verification">Income Verification</NavLink>
+      <NavLink to="/benefits/asset-tests">Asset Tests</NavLink>
+      <NavLink to="/benefits/household-composition">Household Composition</NavLink>
+      <NavLink to="/benefits/notice-generation">Notice Generation</NavLink>
+      <NavLink to="/benefits/appeals-workflow">Appeals Workflow</NavLink>
 
       <div className="sidebar-group-label">Admin</div>
       <NavLink to="/webhooks">Webhooks</NavLink>

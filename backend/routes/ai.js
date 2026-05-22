@@ -851,4 +851,213 @@ router.post('/court-calendar-conflicts', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ──────────────────────────────────────────────────────────────
+// Apply pass 7 (full backlog implementation) — additional AI verbs.
+// All outputs carry disclaimer / requires_attorney_review / not_legal_advice.
+// ──────────────────────────────────────────────────────────────
+
+// Sample fills for the four new verbs.
+const PASS7_SAMPLES = {
+  'coi-briefer-bundle': [
+    {
+      label: 'Honduras — gang persecution (3 sources)',
+      values: {
+        country: 'Honduras',
+        claim_basis: 'PSG — women unable to leave abusive intra-family relationship with MS-13 affiliation.',
+        sources_text: JSON.stringify([
+          { source_id: 'S1', title: 'US State Dept Country Reports 2025 — Honduras', date: '2025-04-22', excerpt: 'PNH frequently fails to investigate IPV cases; 38% of denuncias closed without action.' },
+          { source_id: 'S2', title: 'HRW World Report 2025 — Honduras chapter',     date: '2025-01-15', excerpt: 'MS-13 retains territorial control in Tegucigalpa; femicide rate among highest in region.' },
+          { source_id: 'S3', title: 'UNHCR Eligibility Guidelines Honduras 2024',    date: '2024-09-01', excerpt: 'Women fleeing IPV with state-protection failure should be considered for refugee status.' },
+        ], null, 2),
+      },
+    },
+    {
+      label: 'Eritrea — conscription (2 sources)',
+      values: {
+        country: 'Eritrea',
+        claim_basis: 'Imputed political opinion — refusal of indefinite Sawa national service.',
+        sources_text: JSON.stringify([
+          { source_id: 'S1', title: 'UN Commission of Inquiry — Eritrea 2023',  date: '2023-06-08', excerpt: 'National service amounts to enslavement; deserters face indefinite detention.' },
+          { source_id: 'S2', title: 'Amnesty Intl — Eritrea 2024 update',        date: '2024-11-04', excerpt: 'Giffa round-ups continue in Asmara; returnees from abroad detained at port of entry.' },
+        ], null, 2),
+      },
+    },
+    {
+      label: 'Iran — Baha\'i (1 source — sparse bundle)',
+      values: {
+        country: 'Iran',
+        claim_basis: 'Religion — Baha\'i faith.',
+        sources_text: JSON.stringify([
+          { source_id: 'S1', title: 'UN Special Rapporteur on Iran 2025', date: '2025-03-10', excerpt: 'Systematic discrimination against Baha\'is in education, employment, property rights persists.' },
+        ], null, 2),
+      },
+    },
+  ],
+
+  'declaration-redliner': [
+    {
+      label: 'Honduran IPV — v0.3 → v0.4, trauma pacing ON',
+      values: {
+        prior_draft: 'I am Maria. I am from Honduras. My ex-partner Carlos beat me for many years. When I tried to leave he said he would kill me. The police did not help. I had to flee with my daughter.',
+        revision_goals: '1) Add chronology with specific dates of 3 worst incidents. 2) Add police denuncia detail. 3) Soften graphic content with trauma pacing. 4) Add nexus statement linking to PSG.',
+        trauma_pacing: 'true',
+      },
+    },
+    {
+      label: 'Syrian client — v1.2 → v1.3, no trauma pacing',
+      values: {
+        prior_draft: 'I am Ahmad. I am Sunni Muslim from a village near Latakia. My brother was detained by pro-regime militia in 2023 and killed. I criticized the regime online and was threatened.',
+        revision_goals: '1) Specify militia name and unit. 2) Add date brother was detained vs date of death. 3) Quote one threat verbatim if client recalls. 4) Strengthen well-founded-fear standard.',
+        trauma_pacing: 'false',
+      },
+    },
+    {
+      label: 'Tibetan nun — tighten religious nexus',
+      values: {
+        prior_draft: 'I am Tenzin. I am a Tibetan Buddhist nun. The PSB raided my monastery in 2024. I escaped through Nepal. My family is being asked where I am.',
+        revision_goals: '1) Add monastic ordination lineage. 2) Detail PSB raid: date, officers, what was seized. 3) Add political-opinion-imputed angle (Dalai Lama alignment). 4) Internal-relocation analysis.',
+        trauma_pacing: 'true',
+      },
+    },
+  ],
+
+  'translation-helper': [
+    {
+      label: 'Spanish (Honduran) → English',
+      values: {
+        source_text: 'Mi pareja me golpeaba todas las noches después de tomar. Cuando intenté ir a la policía, el oficial me dijo que era un asunto de familia y que regresara a mi casa.',
+        source_lang: 'es-HN',
+        target_lang: 'en',
+        domain: 'IPV / denuncia',
+      },
+    },
+    {
+      label: 'Arabic (Levantine) → English',
+      values: {
+        source_text: 'في يوم ١٢ من شهر آب اعتقلت الشبيحة أخي الأصغر. لم نسمع عنه شيئاً بعد ذلك. بعد شهرين جاءنا خبر وفاته من مصدر مجهول.',
+        source_lang: 'ar-LB',
+        target_lang: 'en',
+        domain: 'detention narrative',
+      },
+    },
+    {
+      label: 'English → Ukrainian (client letter)',
+      values: {
+        source_text: 'Your asylum interview has been scheduled for May 15, 2026. Please bring all original documents, including your passport, marriage certificate, and any evidence of past persecution.',
+        source_lang: 'en',
+        target_lang: 'uk',
+        domain: 'client correspondence',
+      },
+    },
+    {
+      label: 'Tigrinya → English (excerpt)',
+      values: {
+        source_text: 'ኣብ ሳዋ ንሰለስተ ዓመት ኣገልጊለ። ብዘይ ድሌተይ። ምስ ዘሕዙ ሰብ መውጻእ ኣይከኣልኩን።',
+        source_lang: 'ti',
+        target_lang: 'en',
+        domain: 'national service narrative',
+      },
+    },
+  ],
+
+  'hearing-qa-simulator': [
+    {
+      label: 'IJ — Syrian merits, opening chronology',
+      values: {
+        case_summary: 'Syrian Sunni client, age 41, fled Latakia 2024 after pro-regime militia detained brother. Defensive merits hearing NY IC.',
+        persona: 'IJ',
+        transcript_text: '',
+      },
+    },
+    {
+      label: 'AO — Honduran affirmative, credibility probe',
+      values: {
+        case_summary: 'Honduran woman age 33, single mother, fleeing MS-13 + IPV. Affirmative I-589 at USCIS Newark.',
+        persona: 'AO',
+        transcript_text: JSON.stringify([
+          { speaker: 'AO', text: 'Please state your full name and country of origin.' },
+          { speaker: 'CL', text: 'Maria Hernandez Lopez, from Tegucigalpa, Honduras.' },
+          { speaker: 'AO', text: 'When did you first contact the police about your partner?' },
+          { speaker: 'CL', text: 'I think it was 2022. Maybe 2021. I tried twice.' },
+        ], null, 2),
+      },
+    },
+    {
+      label: 'DHS trial atty — cross on internal relocation',
+      values: {
+        case_summary: 'Eritrean deserter; DHS argues internal relocation to Asmara feasible.',
+        persona: 'DHS_trial_atty',
+        transcript_text: '',
+      },
+    },
+    {
+      label: 'BIA panel — oral argument on PSG',
+      values: {
+        case_summary: 'DRC client, IJ denied; BIA appeal on whether IJ erred in PSG analysis.',
+        persona: 'BIA_panel',
+        transcript_text: '',
+      },
+    },
+  ],
+};
+Object.assign(SAMPLES, PASS7_SAMPLES);
+
+// POST /api/ai/coi-briefer-bundle
+router.post('/coi-briefer-bundle', async (req, res) => {
+  try {
+    const { country, claim_basis, sources, sources_text, context } = req.body || {};
+    if (!country) return res.status(400).json({ error: 'country is required' });
+    let srcs = sources;
+    if (!Array.isArray(srcs)) {
+      if (typeof sources_text === 'string' && sources_text.trim()) {
+        try { srcs = JSON.parse(sources_text); } catch (_) { srcs = []; }
+      } else { srcs = []; }
+    }
+    const result = await ai.coiBrieferFromSources(country, claim_basis || '', srcs, context || {});
+    await record('coi-briefer-bundle', { country, claim_basis, source_count: Array.isArray(srcs) ? srcs.length : 0 }, result);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/ai/declaration-redliner
+router.post('/declaration-redliner', async (req, res) => {
+  try {
+    const { prior_draft, revision_goals, trauma_pacing, options } = req.body || {};
+    if (!prior_draft) return res.status(400).json({ error: 'prior_draft is required' });
+    const tp = String(trauma_pacing).toLowerCase() === 'true' || trauma_pacing === true;
+    const result = await ai.declarationRedliner(prior_draft, revision_goals || '', { ...(options || {}), trauma_pacing: tp });
+    await record('declaration-redliner', { revision_goals, trauma_pacing: tp, draft_chars: prior_draft.length }, result);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/ai/translation-helper
+router.post('/translation-helper', async (req, res) => {
+  try {
+    const { source_text, source_lang, target_lang, domain, options } = req.body || {};
+    if (!source_text) return res.status(400).json({ error: 'source_text is required' });
+    if (!target_lang) return res.status(400).json({ error: 'target_lang is required' });
+    const result = await ai.translationHelper(source_text, source_lang || 'auto', target_lang, { ...(options || {}), domain });
+    await record('translation-helper', { source_lang, target_lang, domain, chars: source_text.length }, result);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/ai/hearing-qa-simulator
+router.post('/hearing-qa-simulator', async (req, res) => {
+  try {
+    const { case_summary, persona, transcript, transcript_text, options } = req.body || {};
+    if (!case_summary) return res.status(400).json({ error: 'case_summary is required' });
+    let tr = transcript;
+    if (!Array.isArray(tr)) {
+      if (typeof transcript_text === 'string' && transcript_text.trim()) {
+        try { tr = JSON.parse(transcript_text); } catch (_) { tr = []; }
+      } else { tr = []; }
+    }
+    const result = await ai.hearingQaSimulator(case_summary, persona || 'IJ', tr, options || {});
+    await record('hearing-qa-simulator', { persona, turn_count: Array.isArray(tr) ? tr.length : 0 }, result);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

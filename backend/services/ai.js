@@ -436,9 +436,155 @@ async function courtCalendarConflicts(attorneyId, calendar_window, calendar_rows
   return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', conflicts: [] });
 }
 
+// ──────────────────────────────────────────────────────────────
+// Disclaimer block enforced on every legal-decision AI output.
+// Apply pass 7: any AI feature that touches legal strategy must
+// surface these flags to the UI.
+// ──────────────────────────────────────────────────────────────
+const LEGAL_DISCLAIMER =
+  'This output is a drafting and research aid for licensed attorneys. ' +
+  'It is NOT legal advice, does not establish an attorney-client relationship, ' +
+  'and MUST be reviewed by a licensed attorney before any client-facing use ' +
+  'or filing. Country-of-origin and legal-standard references may be incomplete, ' +
+  'stale, or jurisdiction-specific.';
+
+function withLegalDisclaimer(obj) {
+  const out = (obj && typeof obj === 'object') ? obj : { summary: String(obj || '') };
+  return {
+    ...out,
+    disclaimer: LEGAL_DISCLAIMER,
+    requires_attorney_review: true,
+    not_legal_advice: true,
+  };
+}
+
+// ──────────────────────────────────────────────────────────────
+// AI Feature 17 (pass 7): COI Briefer — caller-supplied source bundle.
+// Differs from coiCiteMemo: the caller provides the authoritative source
+// list; the model is constrained to cite ONLY those sources and to return
+// per-claim provenance + a confidence per finding.
+// ──────────────────────────────────────────────────────────────
+async function coiBrieferFromSources(country, claim_basis, sources = [], context = {}) {
+  const sys = `${SYSTEM_PROMPT} You are producing a country-of-origin briefer. The caller has supplied an authoritative source bundle; you MUST only cite from that bundle (by source_id) and you MUST mark any finding as "unsupported_by_bundle" if no provided source supports it. Do not fabricate sources. Return strict JSON:
+{
+  "country": string,
+  "claim_basis": string,
+  "bundle_size": number,
+  "findings": [{
+    "finding": string,
+    "supporting_source_ids": [string],
+    "weight": "low"|"medium"|"high",
+    "confidence": number,
+    "supported_by_bundle": boolean
+  }],
+  "unsupported_assertions": [string],
+  "recommended_additional_sources_to_request": [string],
+  "summary": string
+}`;
+  const bundle = Array.isArray(sources) ? sources.map((s, i) => ({
+    source_id: s.source_id || s.id || `S${i + 1}`,
+    title: s.title || s.name || '',
+    publisher: s.publisher || s.source || '',
+    date: s.date || s.published_at || '',
+    url: s.url || s.url_or_doc || '',
+    excerpt: s.excerpt || s.text || s.notes || '',
+  })) : [];
+  const usr = `Country: ${country}\nClaim basis: ${claim_basis}\nCaller-supplied source bundle (cite ONLY these):\n${JSON.stringify(bundle, null, 2)}\nContext: ${JSON.stringify(context)}`;
+  const r = await callOpenRouter(sys, usr);
+  const parsed = safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', findings: [] });
+  parsed.bundle_size = bundle.length;
+  return withLegalDisclaimer(parsed);
+}
+
+// ──────────────────────────────────────────────────────────────
+// AI Feature 18 (pass 7): Iterative Declaration Redliner.
+// Takes a prior declaration draft + revision goals + trauma pacing
+// toggle; emits a redlined revision with inline change-tracking
+// markers and trauma-informed pacing annotations.
+// ──────────────────────────────────────────────────────────────
+async function declarationRedliner(prior_draft, revision_goals, options = {}) {
+  const trauma_pacing = !!options.trauma_pacing;
+  const sys = `${SYSTEM_PROMPT} You are an iterative declaration drafter. Apply the caller's revision goals to the prior declaration and produce a redlined revision. Use "[ADD]...[/ADD]" for insertions and "[DEL]...[/DEL]" for deletions, paragraph-by-paragraph. ${trauma_pacing ? 'Apply trauma-informed pacing: shorter paragraphs, content-warning markers "[CW: <topic>]" before graphic sections, and explicit pause-prompts "[PAUSE_PROMPT]" between sensitive disclosures.' : ''} Return strict JSON:
+{
+  "revision_id": string,
+  "trauma_pacing_applied": boolean,
+  "paragraphs": [{
+    "ord": number,
+    "redlined_text": string,
+    "rationale": string,
+    "content_warning": string
+  }],
+  "change_summary": [string],
+  "open_questions_for_client": [string],
+  "open_questions_for_attorney": [string],
+  "summary": string
+}`;
+  const usr = `Prior declaration draft:\n---\n${prior_draft}\n---\nRevision goals (numbered):\n${revision_goals}\nTrauma pacing: ${trauma_pacing}\nOptions: ${JSON.stringify(options)}`;
+  const r = await callOpenRouter(sys, usr);
+  const parsed = safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', paragraphs: [] });
+  parsed.trauma_pacing_applied = trauma_pacing;
+  return withLegalDisclaimer(parsed);
+}
+
+// ──────────────────────────────────────────────────────────────
+// AI Feature 19 (pass 7): Translation Helper.
+// Client narrative <-> English with terminology preservation,
+// dialect flag, and back-translation QA.
+// ──────────────────────────────────────────────────────────────
+async function translationHelper(source_text, source_lang, target_lang, options = {}) {
+  const sys = `${SYSTEM_PROMPT} You are an asylum-context translation aid. Preserve legal terminology (PSG, nexus, withholding, CAT, etc.) and named entities; flag any dialect-specific phrasing in the source; produce a back-translation for QA. Return strict JSON:
+{
+  "source_lang": string,
+  "target_lang": string,
+  "dialect_detected": string,
+  "translation": string,
+  "back_translation": string,
+  "terminology_preserved": [{ "term": string, "rendering": string }],
+  "ambiguities": [{ "source_phrase": string, "options": [string], "recommended": string }],
+  "qa_notes": [string],
+  "summary": string
+}`;
+  const usr = `Source language: ${source_lang}\nTarget language: ${target_lang}\nOptions: ${JSON.stringify(options)}\n\nSource text:\n---\n${source_text}\n---`;
+  const r = await callOpenRouter(sys, usr);
+  const parsed = safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', terminology_preserved: [] });
+  return withLegalDisclaimer(parsed);
+}
+
+// ──────────────────────────────────────────────────────────────
+// AI Feature 20 (pass 7): Hearing-Prep Q&A Simulator.
+// Turn-based simulator. Persona is IJ, AO, or DHS trial attorney.
+// Caller passes prior turns (transcript) plus next-question scope.
+// ──────────────────────────────────────────────────────────────
+async function hearingQaSimulator(case_summary, persona, transcript = [], options = {}) {
+  const validPersonas = ['IJ', 'AO', 'DHS_trial_atty', 'BIA_panel'];
+  const p = validPersonas.includes(persona) ? persona : 'IJ';
+  const sys = `${SYSTEM_PROMPT} You are role-playing as a ${p} (Immigration Judge / Asylum Officer / DHS trial attorney / BIA panel member) for hearing-prep practice. Ask the next question in the line of inquiry, anticipate the client's likely answer, and propose attorney rehab strategy if the answer is shaky. Return strict JSON:
+{
+  "persona": string,
+  "turn_number": number,
+  "next_question": string,
+  "question_type": "background"|"chronology"|"persecution_detail"|"credibility"|"corroboration"|"discretion"|"closing",
+  "anticipated_client_answer": string,
+  "credibility_risk_if_shaky": "low"|"medium"|"high",
+  "attorney_rehab_strategy": string,
+  "follow_up_questions": [string],
+  "trauma_caution": string,
+  "summary": string
+}`;
+  const turns = Array.isArray(transcript) ? transcript : [];
+  const usr = `Case summary: ${case_summary}\nPersona: ${p}\nPrior transcript (oldest first):\n${JSON.stringify(turns, null, 2)}\nOptions: ${JSON.stringify(options)}`;
+  const r = await callOpenRouter(sys, usr);
+  const parsed = safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', next_question: '', follow_up_questions: [] });
+  parsed.persona = p;
+  parsed.turn_number = turns.length + 1;
+  return withLegalDisclaimer(parsed);
+}
+
 module.exports = {
   callOpenRouter,
   safeJsonParse,
+  LEGAL_DISCLAIMER,
+  withLegalDisclaimer,
   coiCiteMemo,
   hearingPrepBrief,
   evidenceGapAnalyze,
@@ -455,4 +601,9 @@ module.exports = {
   partnerOrgReferral,
   donorImpactReport,
   courtCalendarConflicts,
+  // pass 7 additions
+  coiBrieferFromSources,
+  declarationRedliner,
+  translationHelper,
+  hearingQaSimulator,
 };
