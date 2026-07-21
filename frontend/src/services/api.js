@@ -1,4 +1,5 @@
 const API_BASE =
+  process.env.REACT_APP_API_BASE ||
   (typeof window !== 'undefined' && window.__API_BASE__) ||
   'http://localhost:3085/api';
 

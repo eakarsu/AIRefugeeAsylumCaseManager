@@ -4,7 +4,6 @@
 // Key source order:
 //   1. process.env.PII_ENCRYPTION_KEY_<kid>   (hex or base64, 32 bytes)
 //   2. process.env.PII_ENCRYPTION_KEY         (hex or base64, 32 bytes — kid defaults to "k1")
-//   3. derived from JWT_SECRET via scrypt as a last-resort dev fallback
 // Never overwrites or clears user credentials.
 
 const crypto = require('crypto');
@@ -30,10 +29,7 @@ function getKey(kid) {
     (id === ACTIVE_KID ? process.env.PII_ENCRYPTION_KEY : null);
   const decoded = decodeKey(direct);
   if (decoded) return decoded;
-  // Dev fallback — deterministic key derived from JWT_SECRET.
-  // Production should set PII_ENCRYPTION_KEY explicitly.
-  const seed = process.env.JWT_SECRET || 'refugee-asylum-case-manager-secret-key-2026';
-  return crypto.scryptSync(seed, `pii-kid-${id}`, 32);
+  throw new Error(`missing or invalid 32-byte PII encryption key for ${id}`);
 }
 
 function encrypt(plaintext, kid = ACTIVE_KID) {

@@ -1,17 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'refugee_asylum',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  connectionString: process.env.DATABASE_URL,
 });
 
+function seedHash(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return `scrypt$${salt}$${crypto.scryptSync(password, salt, 64).toString('hex')}`;
+}
+
 async function run() {
+  if (process.env.ALLOW_DESTRUCTIVE_SEED !== '1') throw new Error('Set ALLOW_DESTRUCTIVE_SEED=1 only for an isolated demo database');
+  for (const key of ['SEED_ADMIN_PASSWORD', 'SEED_STAFF_PASSWORD', 'SEED_VIEWER_PASSWORD']) if ((process.env[key] || '').length < 12) throw new Error(`${key} must contain at least 12 characters`);
   const client = await pool.connect();
   try {
     console.log('[seed] resetting tables...');
@@ -252,9 +256,9 @@ async function run() {
 
     console.log('[seed] inserting users...');
     const users = [
-      ['admin@asylum.io',    'admin123',    'Admin',    'admin'],
-      ['attorney@asylum.io', 'attorney123', 'Attorney', 'attorney'],
-      ['viewer@asylum.io',   'viewer123',   'Viewer',   'viewer'],
+      ['admin@asylum.io',    seedHash(process.env.SEED_ADMIN_PASSWORD),  'Admin',    'admin'],
+      ['attorney@asylum.io', seedHash(process.env.SEED_STAFF_PASSWORD),  'Attorney', 'attorney'],
+      ['viewer@asylum.io',   seedHash(process.env.SEED_VIEWER_PASSWORD), 'Viewer',   'viewer'],
     ];
     for (const u of users) {
       await client.query(

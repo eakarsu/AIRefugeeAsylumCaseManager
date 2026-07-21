@@ -10,6 +10,7 @@ const { fireWebhook } = require('./services/webhooks');
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3085;
+if ((process.env.JWT_SECRET || '').length < 32 || !process.env.GOVERNANCE_TENANT_ID || !process.env.PII_ENCRYPTION_KEY || !process.env.DATABASE_URL) throw new Error('JWT_SECRET, GOVERNANCE_TENANT_ID, PII_ENCRYPTION_KEY, and DATABASE_URL are required');
 
 // Middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
@@ -58,12 +59,12 @@ app.use('/api/court-calendars',        require('./routes/courtCalendars'));
 app.use('/api/audit-log',              require('./routes/auditLog'));
 
 // AI routes (16 sub-endpoints + history under /api/ai)
-app.use('/api/ai', require('./routes/ai'));
+if (process.env.ENABLE_GENERATED_ROUTES === 'true' && process.env.NODE_ENV !== 'production') app.use('/api/ai', require('./routes/ai'));
 
 // Cross-cutting
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/attachments',   require('./routes/attachments'));
-app.use('/api/webhooks',      require('./routes/webhooks'));
+if (process.env.ENABLE_GENERATED_ROUTES === 'true' && process.env.NODE_ENV !== 'production') app.use('/api/webhooks', require('./routes/webhooks'));
 
 // Dashboard stats
 app.use('/api/dashboard', require('./routes/dashboard'));
@@ -77,7 +78,7 @@ app.use('/api/redactions',      require('./routes/redaction'));
 app.use('/api/court-dates',     require('./routes/courtDates'));
 app.use('/api/i18n',            require('./routes/i18n'));
 app.use('/api/trauma-flags',    require('./routes/traumaFlags'));
-app.use('/api/external-feeds',  require('./routes/externalFeeds'));
+if (process.env.ENABLE_GENERATED_ROUTES === 'true' && process.env.NODE_ENV !== 'production') app.use('/api/external-feeds', require('./routes/externalFeeds'));
 
 // ── Government Benefits Eligibility Engine ──────────────────
 app.use('/api/benefits/medicaid-eligibility',    require('./routes/benefitFeat_medicaidEligibility'));
@@ -90,6 +91,7 @@ app.use('/api/benefits/household-composition',  require('./routes/benefitFeat_ho
 app.use('/api/benefits/notice-generation',      require('./routes/benefitFeat_noticeGeneration'));
 app.use('/api/benefits/appeals-workflow',       require('./routes/benefitFeat_appealsWorkflow'));
 app.use('/api/credible-fear-interview-prep',    require('./routes/credibleFearInterviewPrep'));
+app.use('/api/governed-asylum-matters', require('./governance'));
 
 app.listen(PORT, () => {
   console.log(`\nAI Refugee/Asylum Case Manager API running on http://localhost:${PORT}\n`);
