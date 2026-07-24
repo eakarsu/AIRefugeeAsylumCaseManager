@@ -59,7 +59,7 @@ app.use('/api/court-calendars',        require('./routes/courtCalendars'));
 app.use('/api/audit-log',              require('./routes/auditLog'));
 
 // AI routes (16 sub-endpoints + history under /api/ai)
-if (process.env.ENABLE_GENERATED_ROUTES === 'true' && process.env.NODE_ENV !== 'production') app.use('/api/ai', require('./routes/ai'));
+app.use('/api/ai', require('./routes/ai'));
 
 // Cross-cutting
 app.use('/api/notifications', require('./routes/notifications'));
@@ -93,6 +93,14 @@ app.use('/api/benefits/appeals-workflow',       require('./routes/benefitFeat_ap
 app.use('/api/credible-fear-interview-prep',    require('./routes/credibleFearInterviewPrep'));
 app.use('/api/governed-asylum-matters', require('./governance'));
 
-app.listen(PORT, () => {
-  console.log(`\nAI Refugee/Asylum Case Manager API running on http://localhost:${PORT}\n`);
+async function start() {
+  await require('./runtimeBootstrap').bootstrapRuntime();
+  app.listen(PORT, () => {
+    console.log(`\nAI Refugee/Asylum Case Manager API running on http://localhost:${PORT}\n`);
+  });
+}
+
+start().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
 });

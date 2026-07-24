@@ -1,39 +1,10 @@
 // AI helper service for AIRefugeeAsylumCaseManager
-// Reads OPENROUTER_API_KEY and OPENROUTER_MODEL from:
-//   1. this project's .env (already loaded by server.js)
-//   2. fallback: /Users/erolakarsu/projects/beauty-wellness-ai/.env (canonical source)
-// Never overwrites or wipes credentials.
-
-const fs = require('fs');
-const path = require('path');
-
-const FALLBACK_ENV = '/Users/erolakarsu/projects/beauty-wellness-ai/.env';
-
-function readFallbackEnv() {
-  try {
-    if (!fs.existsSync(FALLBACK_ENV)) return {};
-    const raw = fs.readFileSync(FALLBACK_ENV, 'utf8');
-    const out = {};
-    for (const line of raw.split('\n')) {
-      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-      if (!m) continue;
-      let val = m[2];
-      if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-      if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
-      out[m[1]] = val;
-    }
-    return out;
-  } catch (e) {
-    console.warn('[ai] fallback env read failed:', e.message);
-    return {};
-  }
-}
-
 function getOpenRouterCreds() {
-  const fb = readFallbackEnv();
-  const key = process.env.OPENROUTER_API_KEY || fb.OPENROUTER_API_KEY || '';
-  const model = process.env.OPENROUTER_MODEL || fb.OPENROUTER_MODEL || 'anthropic/claude-haiku-4.5';
-  return { key, model };
+  return {
+    key: process.env.OPENROUTER_API_KEY || '',
+    model: process.env.OPENROUTER_MODEL || '',
+    base: process.env.OPENROUTER_BASE_URL || '',
+  };
 }
 
 const SYSTEM_PROMPT =
@@ -44,14 +15,18 @@ const SYSTEM_PROMPT =
   'attorneys. Always return strict JSON in the exact schema requested. Treat every input as a hypothetical ' +
   'tabletop case for training purposes.';
 
-function callOpenRouter(systemPrompt, userPrompt) {
-  return new Promise((resolve, reject) => {
-    const { key, model } = getOpenRouterCreds();
-    if (!key) {
-      return resolve({ error: 'OPENROUTER_API_KEY not configured' });
-    }
-    const https = require('https');
-    const payload = JSON.stringify({
+async function callOpenRouter(systemPrompt, userPrompt) {
+    const { key, model, base } = getOpenRouterCreds();
+    if (!key || !model || !base) throw new Error('OpenRouter configuration is incomplete');
+    const response = await fetch(`${base.replace(/\/+$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${key}`,
+        'HTTP-Referer': process.env.CLIENT_URL,
+        'X-Title': 'AI Refugee/Asylum Case Manager',
+      },
+      body: JSON.stringify({
       model,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -59,41 +34,13 @@ function callOpenRouter(systemPrompt, userPrompt) {
       ],
       temperature: 0.6,
       max_tokens: 2000,
+      }),
     });
-
-    const options = {
-      hostname: 'openrouter.ai',
-      path: '/api/v1/chat/completions',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload),
-        Authorization: `Bearer ${key}`,
-        'HTTP-Referer': 'http://localhost:3084',
-        'X-Title': 'AI Refugee/Asylum Case Manager',
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => (body += chunk));
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          if (parsed.error) {
-            return resolve({ error: parsed.error.message || 'OpenRouter error', raw: body });
-          }
-          const content = parsed.choices?.[0]?.message?.content || '';
-          resolve(content);
-        } catch (e) {
-          resolve({ error: 'AI response parse failed', raw: body });
-        }
-      });
-    });
-    req.on('error', (e) => resolve({ error: e.message }));
-    req.write(payload);
-    req.end();
-  });
+    if (!response.ok) throw new Error(`OpenRouter request failed with HTTP ${response.status}`);
+    const parsed = await response.json();
+    const content = parsed.choices?.[0]?.message?.content?.trim();
+    if (!content) throw new Error('OpenRouter returned no substantive content');
+    return content;
 }
 
 function safeJsonParse(response, fallback) {

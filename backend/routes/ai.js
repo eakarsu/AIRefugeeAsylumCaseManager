@@ -4,14 +4,10 @@ const pool = require('../config/database');
 const ai = require('../services/ai');
 
 async function record(feature, input, output) {
-  try {
-    await pool.query(
-      'INSERT INTO ai_results (feature, input, output) VALUES ($1, $2, $3)',
-      [feature, input || {}, output || {}]
-    );
-  } catch (e) {
-    console.warn(`[ai] failed to record ${feature}:`, e.message);
-  }
+  await pool.query(
+    'INSERT INTO ai_results (feature, input, output) VALUES ($1, $2, $3)',
+    [feature, input || {}, output || {}]
+  );
 }
 
 // ──────────────────────────────────────────────────────────────

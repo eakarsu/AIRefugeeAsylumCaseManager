@@ -46,13 +46,14 @@ router.post('/login', async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', authenticateToken, (req, res) => {
-  res.json({
-    id: req.user.id,
-    email: req.user.email,
-    name: req.user.name,
-    role: req.user.role,
-  });
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, email, name, role, created_at FROM users WHERE id=$1 LIMIT 1', [req.user.id]);
+    if (!result.rows.length) return res.status(401).json({ error: 'User no longer exists' });
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // GET /api/auth/users  (admin only)
