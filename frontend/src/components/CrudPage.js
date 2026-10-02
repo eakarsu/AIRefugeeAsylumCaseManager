@@ -30,6 +30,7 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
   const [draft, setDraft] = useState({});
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [viewing, setViewing] = useState(null);
 
   // attachments panel state
   const [attachRow, setAttachRow] = useState(null);
@@ -242,9 +243,9 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
               </thead>
               <tbody>
                 {pagedRows.map((row) => (
-                  <tr key={row.id}>
+                  <tr key={row.id} style={{ cursor: "pointer" }} onClick={() => setViewing(row)}>
                     {fields.map((f) => <td key={f.key}>{renderCell(row, f)}</td>)}
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }} onClick={(event) => event.stopPropagation()}>
                       {allowAttachments && (
                         <button className="btn secondary" onClick={() => openAttachments(row)} style={{ marginRight: 6 }}>
                           Files
@@ -272,6 +273,32 @@ export default function CrudPage({ title, subtitle, api, fields, statusKey, allo
           )}
         </>
       )}
+      {viewing && (
+        <div className="modal-overlay" onClick={() => setViewing(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{title} · Details</h3>
+              <button className="modal-close" onClick={() => setViewing(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                {fields.map((f) => (
+                  <div key={f.key} style={{ borderBottom: "1px solid #1e293b", paddingBottom: 6 }}>
+                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>{f.label}</div>
+                    <div style={{ marginTop: 2 }}>{renderCell(viewing, f)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn danger" onClick={() => { const row = viewing; setViewing(null); handleDelete(row); }}>Delete</button>
+              <button className="btn" onClick={() => { const row = viewing; setViewing(null); openEdit(row); }}>Edit</button>
+              <button className="btn secondary" onClick={() => setViewing(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {(creating || editing) && (
         <div className="modal-overlay" onClick={closeModal}>
