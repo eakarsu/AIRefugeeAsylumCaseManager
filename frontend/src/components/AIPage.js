@@ -50,20 +50,6 @@ export default function AIPage({ title, subtitle, feature, inputs, run, buttonLa
     setResult(null);
     setError(null);
   };
-  const fillAll = (style) => {
-    const next = { ...initial };
-    for (const i of (inputs || [])) {
-      const label = String(i.label || i.key).replace(/[_-]+/g, " ");
-      if (i.type === "number") next[i.key] = style === "detailed" ? 100 : style === "minimal" ? 1 : 10;
-      else if (i.type === "select") next[i.key] = (i.options && i.options[0]) || "Default";
-      else if (i.type === "textarea") next[i.key] = style === "detailed" ? `Detailed ${label}: describe the specifics, constraints and expected outcome for review.` : `Example ${label} for review.`;
-      else next[i.key] = style === "detailed" ? `${label} — detailed example value` : `${label} example`;
-    }
-    setValues(next);
-    setResult(null);
-    setError(null);
-  };
-
 
   const handleRun = async () => {
     setLoading(true); setError(null); setResult(null);
@@ -128,16 +114,6 @@ export default function AIPage({ title, subtitle, feature, inputs, run, buttonLa
           </div>
         </div>
       )}
-      {(inputs && inputs.length > 0) && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-          {["minimal", "standard", "detailed"].map((style) => (
-            <button key={style} type="button" className="btn secondary" onClick={() => fillAll(style)}>
-              Fill all fields ({style})
-            </button>
-          ))}
-        </div>
-      )}
-
 
       {(inputs && inputs.length > 0) && (
         <div className="card">
