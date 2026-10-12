@@ -14,11 +14,11 @@ export default function AICoiBrieferBundlePage() {
         { key: 'sources_text', label: 'Source Bundle (JSON array)', type: 'textarea',
           placeholder: '[{ "source_id": "S1", "title": "...", "date": "2025-01-01", "excerpt": "..." }]' },
       ]}
-      run={(v) => aiCoiBrieferBundle({
+      run={(v, requestOptions) => aiCoiBrieferBundle({
         country: v.country,
         claim_basis: v.claim_basis,
         sources_text: v.sources_text,
-      })}
+      }, requestOptions)}
     />
   );
 }

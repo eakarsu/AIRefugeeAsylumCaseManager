@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, setToken, setStoredUser } from '../services/api';
 
+const demoEmail = process.env.REACT_APP_DEMO_EMAIL || '';
+const demoPassword = process.env.REACT_APP_DEMO_PASSWORD || '';
+const demoAvailable = process.env.REACT_APP_ENABLE_DEMO_CREDENTIAL_AUTOFILL === 'true' && Boolean(demoEmail && demoPassword);
+
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@asylum.io');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -56,20 +60,18 @@ export default function LoginPage() {
 
         <button
           type="button"
-          onClick={() => { setEmail(process.env.REACT_APP_DEMO_EMAIL || ''); setPassword(process.env.REACT_APP_DEMO_PASSWORD || ''); }}
-          disabled={!process.env.REACT_APP_DEMO_EMAIL || !process.env.REACT_APP_DEMO_PASSWORD}
-          aria-label="Auto Fill Demo Credentials"
+          onClick={() => { if (!demoAvailable) return; setEmail(demoEmail); setPassword(demoPassword); setError(null); }}
+          disabled={!demoAvailable || loading}
+          aria-label="Fill demo credentials"
           style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
         >
-          Auto Fill Demo Credentials
+          Fill demo credentials
         </button>
         <button className="btn" type="submit" disabled={loading} style={{ width: '100%' }}>
           {loading ? <><span className="spinner" />Authenticating...</> : 'Sign In'}
         </button>
 
-        <p className="login-hint">
-          Demo: <code>admin@asylum.io</code> / <code>admin123</code>
-        </p>
+        {!demoAvailable && <p className="login-hint">Demo credentials are not configured for this build.</p>}
       </form>
     </div>
   );

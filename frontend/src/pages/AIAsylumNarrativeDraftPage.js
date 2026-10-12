@@ -13,7 +13,7 @@ export default function AIAsylumNarrativeDraftPage() {
         { key: 'persecution_basis', label: 'Persecution Basis', type: 'textarea', placeholder: 'Protected ground(s) + nexus.' },
         { key: 'notes',             label: 'Drafting Notes',    type: 'textarea' },
       ]}
-      run={(v) => aiAsylumNarrativeDraft({ client_facts: v.client_facts, persecution_basis: v.persecution_basis, context: { notes: v.notes } })}
+      run={(v, requestOptions) => aiAsylumNarrativeDraft({ client_facts: v.client_facts, persecution_basis: v.persecution_basis, context: { notes: v.notes } }, requestOptions)}
     />
   );
 }

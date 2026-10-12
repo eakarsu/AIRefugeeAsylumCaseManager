@@ -16,11 +16,11 @@ export default function AIHearingQaSimulatorPage() {
         { key: 'transcript_text',  label: 'Prior Transcript (JSON array)', type: 'textarea',
           placeholder: '[{ "speaker": "IJ", "text": "Please state your full name..." }, { "speaker": "CL", "text": "..." }]' },
       ]}
-      run={(v) => aiHearingQaSimulator({
+      run={(v, requestOptions) => aiHearingQaSimulator({
         case_summary: v.case_summary,
         persona: v.persona,
         transcript_text: v.transcript_text,
-      })}
+      }, requestOptions)}
     />
   );
 }

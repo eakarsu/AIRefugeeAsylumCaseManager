@@ -18,12 +18,12 @@ export default function AITranslationHelperPage() {
         { key: 'domain',      label: 'Domain hint',    type: 'text',
           placeholder: 'e.g. IPV / denuncia, detention narrative, client correspondence' },
       ]}
-      run={(v) => aiTranslationHelper({
+      run={(v, requestOptions) => aiTranslationHelper({
         source_text: v.source_text,
         source_lang: v.source_lang,
         target_lang: v.target_lang,
         domain: v.domain,
-      })}
+      }, requestOptions)}
     />
   );
 }

@@ -13,7 +13,7 @@ export default function AICountryConditionsSummaryPage() {
         { key: 'period',  label: 'Period', placeholder: 'e.g. 2024-2026' },
         { key: 'notes',   label: 'Notes',  type: 'textarea' },
       ]}
-      run={(v) => aiCountryConditionsSummary({ country: v.country, period: v.period, context: { notes: v.notes } })}
+      run={(v, requestOptions) => aiCountryConditionsSummary({ country: v.country, period: v.period, context: { notes: v.notes } }, requestOptions)}
     />
   );
 }

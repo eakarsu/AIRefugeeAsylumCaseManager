@@ -13,7 +13,7 @@ export default function AICourtCalendarConflictsPage() {
         { key: 'window',      label: 'Window',      placeholder: '2026-05-15 to 2026-06-30' },
         { key: 'notes',       label: 'Notes',       type: 'textarea' },
       ]}
-      run={(v) => aiCourtCalendarConflicts({ attorney_id: v.attorney_id, window: v.window })}
+      run={(v, requestOptions) => aiCourtCalendarConflicts({ attorney_id: v.attorney_id, window: v.window }, requestOptions)}
     />
   );
 }

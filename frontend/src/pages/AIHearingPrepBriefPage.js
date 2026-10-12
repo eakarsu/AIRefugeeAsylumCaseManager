@@ -14,7 +14,7 @@ export default function AIHearingPrepBriefPage() {
         { key: 'judge',        label: 'Judge / Officer' },
         { key: 'date',         label: 'Hearing Date',  type: 'date' },
       ]}
-      run={(v) => aiHearingPrepBrief({ case_summary: v.case_summary, hearing: { court: v.court, judge: v.judge, date: v.date } })}
+      run={(v, requestOptions) => aiHearingPrepBrief({ case_summary: v.case_summary, hearing: { court: v.court, judge: v.judge, date: v.date } }, requestOptions)}
     />
   );
 }

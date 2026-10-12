@@ -13,11 +13,11 @@ export default function AIInterpreterMatchPage() {
         { key: 'client_languages',   label: 'Client Languages', type: 'textarea' },
         { key: 'case_sensitivities', label: 'Case Sensitivities', type: 'textarea' },
       ]}
-      run={(v) => aiInterpreterMatch({
+      run={(v, requestOptions) => aiInterpreterMatch({
         client_country: v.client_country,
         client_languages: v.client_languages,
         case_sensitivities: v.case_sensitivities,
-      })}
+      }, requestOptions)}
     />
   );
 }

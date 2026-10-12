@@ -13,7 +13,7 @@ export default function AIDonorImpactReportPage() {
         { key: 'audience', label: 'Audience', placeholder: 'major_donors, board_meeting, foundation_grant_report, newsletter' },
         { key: 'notes',    label: 'Notes',    type: 'textarea' },
       ]}
-      run={(v) => aiDonorImpactReport({ period: v.period, audience: v.audience, notes: v.notes })}
+      run={(v, requestOptions) => aiDonorImpactReport({ period: v.period, audience: v.audience, notes: v.notes }, requestOptions)}
     />
   );
 }

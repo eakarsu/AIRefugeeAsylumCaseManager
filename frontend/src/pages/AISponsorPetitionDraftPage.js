@@ -14,12 +14,12 @@ export default function AISponsorPetitionDraftPage() {
         { key: 'program',          label: 'Program',      placeholder: 'Welcome Corps, I-134A, CHNV, P-3, etc.' },
         { key: 'notes',            label: 'Notes',        type: 'textarea' },
       ]}
-      run={(v) => aiSponsorPetitionDraft({
+      run={(v, requestOptions) => aiSponsorPetitionDraft({
         beneficiary_text: v.beneficiary_text,
         sponsor_text: v.sponsor_text,
         program: v.program,
         context: { notes: v.notes },
-      })}
+      }, requestOptions)}
     />
   );
 }

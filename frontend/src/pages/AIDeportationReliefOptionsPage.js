@@ -13,7 +13,7 @@ export default function AIDeportationReliefOptionsPage() {
         { key: 'current_status', label: 'Current Immigration Status', type: 'text' },
         { key: 'notes',          label: 'Notes',                  type: 'textarea' },
       ]}
-      run={(v) => aiDeportationReliefOptions({ client_facts: v.client_facts, current_status: v.current_status, context: { notes: v.notes } })}
+      run={(v, requestOptions) => aiDeportationReliefOptions({ client_facts: v.client_facts, current_status: v.current_status, context: { notes: v.notes } }, requestOptions)}
     />
   );
 }

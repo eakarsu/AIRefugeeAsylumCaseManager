@@ -13,7 +13,7 @@ export default function AIPartnerOrgReferralPage() {
         { key: 'client_need',    label: 'Client Need',  type: 'textarea' },
         { key: 'notes',          label: 'Notes',        type: 'textarea' },
       ]}
-      run={(v) => aiPartnerOrgReferral({ client_country: v.client_country, client_need: v.client_need, notes: v.notes })}
+      run={(v, requestOptions) => aiPartnerOrgReferral({ client_country: v.client_country, client_need: v.client_need, notes: v.notes }, requestOptions)}
     />
   );
 }

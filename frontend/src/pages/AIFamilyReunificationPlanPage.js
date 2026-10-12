@@ -13,11 +13,11 @@ export default function AIFamilyReunificationPlanPage() {
         { key: 'members_text',   label: 'Family Members',   type: 'textarea' },
         { key: 'notes',          label: 'Notes',            type: 'textarea' },
       ]}
-      run={(v) => aiFamilyReunificationPlan({
+      run={(v, requestOptions) => aiFamilyReunificationPlan({
         principal_text: v.principal_text,
         members_text: v.members_text,
         context: { notes: v.notes },
-      })}
+      }, requestOptions)}
     />
   );
 }

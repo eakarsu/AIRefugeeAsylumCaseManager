@@ -12,7 +12,7 @@ export default function AIExecutiveBriefPage() {
         { key: 'notes', label: 'Bias / Focus Notes (optional)', type: 'textarea',
           placeholder: 'e.g. Focus on upcoming hearings 7d, or BIA appeals, or funder reporting.' },
       ]}
-      run={(v) => aiExecutiveBrief({ notes: v.notes })}
+      run={(v, requestOptions) => aiExecutiveBrief({ notes: v.notes }, requestOptions)}
     />
   );
 }

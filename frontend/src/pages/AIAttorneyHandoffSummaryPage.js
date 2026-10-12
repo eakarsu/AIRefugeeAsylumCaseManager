@@ -12,7 +12,7 @@ export default function AIAttorneyHandoffSummaryPage() {
         { key: 'case_summary',   label: 'Case Summary',     type: 'textarea' },
         { key: 'outgoing_notes', label: 'Outgoing Attorney Notes', type: 'textarea' },
       ]}
-      run={(v) => aiAttorneyHandoffSummary({ case_summary: v.case_summary, outgoing_notes: v.outgoing_notes })}
+      run={(v, requestOptions) => aiAttorneyHandoffSummary({ case_summary: v.case_summary, outgoing_notes: v.outgoing_notes }, requestOptions)}
     />
   );
 }

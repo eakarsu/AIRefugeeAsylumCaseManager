@@ -16,11 +16,11 @@ export default function AIDeclarationRedlinerPage() {
         { key: 'trauma_pacing',   label: 'Trauma Pacing',   type: 'select',
           options: ['true', 'false'], defaultValue: 'true' },
       ]}
-      run={(v) => aiDeclarationRedliner({
+      run={(v, requestOptions) => aiDeclarationRedliner({
         prior_draft: v.prior_draft,
         revision_goals: v.revision_goals,
         trauma_pacing: v.trauma_pacing,
-      })}
+      }, requestOptions)}
     />
   );
 }

@@ -13,7 +13,7 @@ export default function AIHardshipEvidenceSuggestPage() {
         { key: 'relief_type',  label: 'Relief Type',    placeholder: 'I-601A, cancellation of removal, humanitarian asylum, VAWA, etc.' },
         { key: 'notes',        label: 'Notes',          type: 'textarea' },
       ]}
-      run={(v) => aiHardshipEvidenceSuggest({ client_facts: v.client_facts, relief_type: v.relief_type, context: { notes: v.notes } })}
+      run={(v, requestOptions) => aiHardshipEvidenceSuggest({ client_facts: v.client_facts, relief_type: v.relief_type, context: { notes: v.notes } }, requestOptions)}
     />
   );
 }

@@ -1,3 +1,4 @@
+import NativeBenefitPresets, { benefitInputDefaults } from './NativeBenefitPresets';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AIResultDisplay from './AIResultDisplay';
 import { canWrite } from '../services/api';
@@ -152,14 +153,14 @@ export default function BenefitPage({ title, subtitle, api, fields, statusKey, a
     if (aiVerbs.length > 0) {
       const first = aiVerbs[0];
       setActiveAiVerb(first);
-      setAiInputs(Object.fromEntries((first.inputs || []).map((i) => [i.key, i.defaultValue ?? ''])));
+      setAiInputs(benefitInputDefaults(first));
     }
   };
   const closeDetail = () => { setDetailRow(null); setAiResult(null); setAiError(null); };
 
   const selectVerb = (verb) => {
     setActiveAiVerb(verb);
-    setAiInputs(Object.fromEntries((verb.inputs || []).map((i) => [i.key, i.defaultValue ?? ''])));
+    setAiInputs(benefitInputDefaults(verb));
     setAiResult(null);
     setAiError(null);
   };
@@ -414,6 +415,7 @@ export default function BenefitPage({ title, subtitle, api, fields, statusKey, a
                   {activeAiVerb && (
                     <div className="card" style={{ marginBottom: 16 }}>
                       <h5 style={{ margin: '0 0 12px', color: '#a78bfa' }}>{activeAiVerb.label}</h5>
+                      <NativeBenefitPresets verb={activeAiVerb} values={aiInputs} onFill={setAiInputs} disabled={aiLoading} />
                       {(activeAiVerb.inputs || []).length > 0 && (
                         <div className="form-grid" style={{ marginBottom: 12 }}>
                           {activeAiVerb.inputs.map((i) => (
@@ -421,6 +423,7 @@ export default function BenefitPage({ title, subtitle, api, fields, statusKey, a
                               <label>{i.label}</label>
                               {i.type === 'textarea' ? (
                                 <textarea
+                                  data-ai-field={i.key}
                                   placeholder={i.placeholder || ''}
                                   value={aiInputs[i.key] ?? ''}
                                   onChange={(e) => setAiInputs((s) => ({ ...s, [i.key]: e.target.value }))}
@@ -436,6 +439,7 @@ export default function BenefitPage({ title, subtitle, api, fields, statusKey, a
                               ) : (
                                 <input
                                   type={i.type || 'text'}
+                                  data-ai-field={i.key}
                                   placeholder={i.placeholder || ''}
                                   value={aiInputs[i.key] ?? ''}
                                   onChange={(e) => setAiInputs((s) => ({ ...s, [i.key]: e.target.value }))}
@@ -445,7 +449,7 @@ export default function BenefitPage({ title, subtitle, api, fields, statusKey, a
                           ))}
                         </div>
                       )}
-                      <button className="btn ai" onClick={runAi} disabled={aiLoading}>
+                      <button className="btn ai" onClick={runAi} disabled={aiLoading || (activeAiVerb.inputs || []).some((field) => ['paystub_text', 'tax_return_text', 'letter_text'].includes(field.key) && !String(aiInputs[field.key] ?? '').trim())}>
                         {aiLoading ? <><span className="spinner" />Running...</> : `Run: ${activeAiVerb.label}`}
                       </button>
                     </div>

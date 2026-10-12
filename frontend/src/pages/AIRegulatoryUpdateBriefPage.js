@@ -13,7 +13,7 @@ export default function AIRegulatoryUpdateBriefPage() {
         { key: 'jurisdiction', label: 'Jurisdiction', placeholder: 'US, US — 9th Cir., etc.' },
         { key: 'notes',        label: 'Notes',        type: 'textarea' },
       ]}
-      run={(v) => aiRegulatoryUpdateBrief({ topic: v.topic, jurisdiction: v.jurisdiction, context: { notes: v.notes } })}
+      run={(v, requestOptions) => aiRegulatoryUpdateBrief({ topic: v.topic, jurisdiction: v.jurisdiction, context: { notes: v.notes } }, requestOptions)}
     />
   );
 }
